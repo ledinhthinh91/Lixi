@@ -2,139 +2,88 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Admin – Lì Xì 2026</title>
+<title>Admin Lì Xì</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <style>
 body{
-  margin:0;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
+  font-family: Arial;
   background:#f5f5f5;
-  padding:16px;
+  padding:30px;
+  text-align:center
 }
-h1{
-  color:#d32f2f;
-  text-align:center;
-}
-.card{
-  background:#fff;
-  border-radius:14px;
-  padding:16px;
-  margin-bottom:16px;
-  box-shadow:0 4px 12px rgba(0,0,0,.1);
-}
-table{
+input,button{
   width:100%;
-  border-collapse:collapse;
+  max-width:320px;
+  padding:14px;
+  margin:10px auto;
+  font-size:16px;
 }
-th,td{
-  border:1px solid #ddd;
-  padding:8px;
-  font-size:14px;
-}
-th{
-  background:#fbe9e7;
-}
-.badge{
-  padding:4px 8px;
-  border-radius:8px;
+button{
   background:#d32f2f;
-  color:#fff;
-  font-size:12px;
+  color:white;
+  border:none;
+  border-radius:6px
 }
+#log{margin-top:20px;font-weight:bold}
 </style>
 </head>
-
 <body>
 
-<h1>📋 ADMIN – DANH SÁCH LÌ XÌ</h1>
+<h2>🔐 ADMIN LÌ XÌ</h2>
 
-<div class="card">
-  <h3>🎁 Tình trạng giải</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Giải</th>
-        <th>Giá trị</th>
-        <th>Còn lại</th>
-      </tr>
-    </thead>
-    <tbody id="prizes"></tbody>
-  </table>
-</div>
+<input type="password" id="pass" placeholder="Nhập mật khẩu admin">
+<button onclick="resetAll()">♻️ RESET TOÀN BỘ</button>
 
-<div class="card">
-  <h3>👥 Danh sách người trúng</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Tên</th>
-        <th>Giải</th>
-        <th>Giá trị</th>
-        <th>Thời gian</th>
-      </tr>
-    </thead>
-    <tbody id="users"></tbody>
-  </table>
-</div>
+<div id="log"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
-  getFirestore,
-  collection,
-  getDocs
+  getFirestore, collection, getDocs, deleteDoc,
+  doc, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* 🔥 FIREBASE CONFIG (GIỐNG index.html) */
 const firebaseConfig = {
   apiKey: "AIzaSyCLGVLJ-S2uyptD8-0I5MrqeOOBE6g2AD0",
   authDomain: "premium-bastion-300803.firebaseapp.com",
-  projectId: "premium-bastion-300803",
-  storageBucket: "premium-bastion-300803.firebasestorage.app",
-  messagingSenderId: "665922128360",
-  appId: "1:665922128360:web:65594fbeb2123fb0a07c5d"
+  projectId: "premium-bastion-300803"
 };
+
+const ADMIN_PASS = "lixi2026"; // 🔐 đổi mật khẩu ở đây
+
+const PRIZES_RESET = [
+  { id:"dacbiet", qty:1 },
+  { id:"nhat", qty:2 },
+  { id:"nhi", qty:3 },
+  { id:"ba", qty:5 },
+  { id:"khuyenkhich", qty:14 }
+];
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* LOAD GIẢI */
-async function loadPrizes(){
-  const body=document.getElementById("prizes");
-  const snap=await getDocs(collection(db,"prizes"));
-  body.innerHTML="";
-  snap.forEach(d=>{
-    const p=d.data();
-    body.innerHTML+=`
-      <tr>
-        <td>${p.name}</td>
-        <td>${p.value}</td>
-        <td><span class="badge">${p.qty}</span></td>
-      </tr>`;
-  });
-}
+window.resetAll = async () => {
+  const pass = document.getElementById("pass").value;
+  const log = document.getElementById("log");
 
-/* LOAD NGƯỜI TRÚNG */
-async function loadUsers(){
-  const body=document.getElementById("users");
-  const snap=await getDocs(collection(db,"lixi"));
-  body.innerHTML="";
-  snap.forEach(d=>{
-    const u=d.data();
-    body.innerHTML+=`
-      <tr>
-        <td>${u.name}</td>
-        <td>${u.prize}</td>
-        <td>${u.value}</td>
-        <td>${u.time}</td>
-      </tr>`;
-  });
-}
+  if(pass !== ADMIN_PASS){
+    log.innerHTML = "❌ Sai mật khẩu";
+    return;
+  }
 
-loadPrizes();
-loadUsers();
+  // xoá kết quả trúng
+  const users = await getDocs(collection(db,"lixi"));
+  for(const d of users.docs){
+    await deleteDoc(doc(db,"lixi",d.id));
+  }
+
+  // reset lại số lượng giải
+  for(const p of PRIZES_RESET){
+    await updateDoc(doc(db,"prizes",p.id),{qty:p.qty});
+  }
+
+  log.innerHTML = "✅ RESET THÀNH CÔNG – CÓ THỂ BỐC LẠI";
+};
 </script>
-
 </body>
 </html>
