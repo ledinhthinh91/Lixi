@@ -43,109 +43,104 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  getDoc,
-  collection,
-  getDocs,
-  runTransaction
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-  
-  // 🔥 DÁN FIREBASE CONFIG VÀO ĐÂY
+  import {
+    getFirestore,
+    doc,
+    runTransaction
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  // 🔥 FIREBASE CONFIG (GIỮ NGUYÊN)
   const firebaseConfig = {
-  apiKey: "AIzaSyCLGVLJ-S2uyptD8-0I5MrqeOOBE6g2AD0",
-  authDomain: "premium-bastion-300803.firebaseapp.com",
-  projectId: "premium-bastion-300803",
-  storageBucket: "premium-bastion-300803.firebasestorage.app",
-  messagingSenderId: "665922128360",
-  appId: "1:665922128360:web:65594fbeb2123fb0a07c5d",
-  measurementId: "G-VXLG71CBNC"
-};
+    apiKey: "AIzaSyCLGVLJ-S2uyptD8-0I5MrqeOOBE6g2AD0",
+    authDomain: "premium-bastion-300803.firebaseapp.com",
+    projectId: "premium-bastion-300803",
+    storageBucket: "premium-bastion-300803.firebasestorage.app",
+    messagingSenderId: "665922128360",
+    appId: "1:665922128360:web:65594fbeb2123fb0a07c5d"
+  };
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
+  // 📱 ID thiết bị
   let deviceId = localStorage.getItem("lixi_device");
   if (!deviceId) {
     deviceId = crypto.randomUUID();
     localStorage.setItem("lixi_device", deviceId);
   }
 
-  const PRIZES = [
-  { name: "🎁 Lộc Đặc Biệt", value: "Quà bất ngờ", qty: 1 },
+  // 🎁 ID GIẢI – KHỚP FIRESTORE CỦA BẠN
+  const prizeIds = [
+    "loc-dac-biet",
+    "loc-dai-xuan",
+    "loc-nhu-y",
+    "loc-an-khang",
+    "loc-binh-an",
+    "loc-may-man"
+  ];
 
-  { name: "Lộc Đại Xuân",   value: "100.000đ", qty: 1 },
-  { name: "Lộc Như Ý",      value: "50.000đ",  qty: 3 },
-  { name: "Lộc An Khang",   value: "30.000đ",  qty: 5 },
-  { name: "Lộc Bình An",    value: "20.000đ",  qty: 5 },
-  { name: "Lộc May Mắn",    value: "10.000đ",  qty: 10 }
-];
-// 👉 Tổng: 1 + 1 + 3 + 5 + 5 + 10 = 25 giải
+  // 🎲 BỐC LÌ XÌ
+  window.draw = async function () {
+    const name = document.getElementById("name").value.trim();
+    const resultDiv = document.getElementById("result");
 
-  async function draw() {
-  const name = document.getElementById("name").value.trim();
-  if (!name) return alert("Vui lòng nhập tên");
+    if (!name) {
+      alert("Vui lòng nhập tên");
+      return;
+    }
 
-  const resultDiv = document.getElementById("result");
-  const deviceId = localStorage.getItem("lixi_device");
+    try {
+      await runTransaction(db, async (transaction) => {
 
-  try {
-    await runTransaction(db, async (transaction) => {
-
-      // 1️⃣ kiểm tra thiết bị đã bốc chưa
-      const userRef = doc(db, "lixi", deviceId);
-      const userSnap = await transaction.get(userRef);
-      if (userSnap.exists()) {
-        throw "❌ Thiết bị này đã bốc lì xì rồi";
-      }
-
-      // 2️⃣ lấy danh sách giải còn lại
-      const prizeSnap = await getDocs(collection(db, "prizes"));
-      const available = [];
-
-      prizeSnap.forEach(p => {
-        const d = p.data();
-        if (d.qty > 0) {
-          available.push({ id: p.id, ...d });
+        // 1️⃣ chặn bốc lại
+        const userRef = doc(db, "lixi", deviceId);
+        const userSnap = await transaction.get(userRef);
+        if (userSnap.exists()) {
+          throw "❌ Thiết bị này đã bốc lì xì rồi";
         }
+
+        // 2️⃣ lấy giải còn số lượng
+        const available = [];
+
+        for (const id of prizeIds) {
+          const ref = doc(db, "prizes", id);
+          const snap = await transaction.get(ref);
+          if (snap.exists() && snap.data().qty > 0) {
+            available.push({ ref, ...snap.data() });
+          }
+        }
+
+        if (available.length === 0) {
+          throw "😢 Đã hết lì xì";
+        }
+
+        // 3️⃣ random
+        const prize = available[Math.floor(Math.random() * available.length)];
+
+        // 4️⃣ trừ số lượng
+        transaction.update(prize.ref, {
+          qty: prize.qty - 1
+        });
+
+        // 5️⃣ lưu người trúng
+        transaction.set(userRef, {
+          name,
+          prize: prize.name,
+          value: prize.value,
+          time: new Date().toISOString()
+        });
+
+        // 6️⃣ hiển thị
+        resultDiv.innerHTML = `
+          🎉 <b>${name}</b> nhận được<br>
+          🧧 <span style="color:#d32f2f">${prize.name} – ${prize.value}</span>
+        `;
       });
 
-      if (available.length === 0) {
-        throw "😢 Đã hết lì xì";
-      }
-
-      // 3️⃣ random giải
-      const prize = available[Math.floor(Math.random() * available.length)];
-      const prizeRef = doc(db, "prizes", prize.id);
-
-      // 4️⃣ trừ số lượng
-      transaction.update(prizeRef, {
-        qty: prize.qty - 1
-      });
-
-      // 5️⃣ lưu kết quả người trúng
-      transaction.set(userRef, {
-        name,
-        prize: prize.name,
-        value: prize.value,
-        time: new Date().toISOString()
-      });
-
-      // 6️⃣ hiển thị kết quả
-      resultDiv.innerHTML = `
-        🎉 <b>${name}</b> nhận được<br>
-        🧧 <span style="color:#d32f2f">${prize.name} – ${prize.value}</span>
-      `;
-    });
-
-  } catch (err) {
-    resultDiv.innerHTML = typeof err === "string"
-      ? err
-      : "⚠️ Có lỗi xảy ra, vui lòng thử lại";
+    } catch (err) {
+      resultDiv.innerHTML = err;
+    }
   }
-}
 </script>
 
 </body>
