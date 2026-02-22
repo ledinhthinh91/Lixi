@@ -10,7 +10,7 @@ body{
   margin:0;
   min-height:100vh;
   font-family:'Segoe UI', Arial, sans-serif;
-  background:linear-gradient(180deg,#ffebcd,#fff);
+  background:linear-gradient(180deg,#c62828,#ffebcd);
   display:flex;
   align-items:center;
   justify-content:center;
@@ -20,30 +20,30 @@ body{
   width:100%;
   max-width:380px;
   background:#fff;
-  border-radius:22px;
-  padding:26px 22px;
-  box-shadow:0 12px 30px rgba(0,0,0,.18);
+  border-radius:24px;
+  padding:28px 22px;
+  box-shadow:0 16px 36px rgba(0,0,0,.25);
   text-align:center;
 }
 
 .logo{
-  font-size:30px;
+  font-size:32px;
   font-weight:900;
-  color:#d32f2f;
+  color:#c62828;
 }
 
 .subtitle{
   margin-top:6px;
   font-size:15px;
-  color:#888;
+  color:#b71c1c;
 }
 
 /* INPUT + BUTTON ĐỀU NHAU */
 input, button{
   width:100%;
-  height:56px;                 /* 👈 cao bằng nhau */
-  margin-top:18px;
-  border-radius:14px;
+  height:58px;
+  margin-top:20px;
+  border-radius:16px;
   font-size:17px;
   box-sizing:border-box;
 }
@@ -51,40 +51,46 @@ input, button{
 /* INPUT */
 input{
   padding:0 16px;
-  border:1.5px solid #ddd;
+  border:2px solid #f2c94c;
   outline:none;
 }
 input:focus{
-  border-color:#d32f2f;
+  border-color:#c62828;
 }
 
 /* BUTTON */
 button{
   border:none;
-  font-weight:800;
+  font-weight:900;
   color:#fff;
-  background:linear-gradient(135deg,#d32f2f,#ff7043);
+  background:linear-gradient(135deg,#c62828,#ff3d00);
   cursor:pointer;
+  box-shadow:0 6px 14px rgba(198,40,40,.5);
 }
 button:active{
   transform:scale(.96);
 }
+button:disabled{
+  background:#ccc;
+  box-shadow:none;
+  cursor:not-allowed;
+}
 
 #result{
-  margin-top:22px;
+  margin-top:24px;
   font-size:18px;
   line-height:1.6;
 }
 
 .lucky{
-  color:#d32f2f;
+  color:#c62828;
   font-weight:900;
 }
 
 .footer{
   margin-top:18px;
   font-size:13px;
-  color:#aaa;
+  color:#999;
 }
 </style>
 </head>
@@ -92,7 +98,7 @@ button:active{
 <body>
 
 <div class="card">
-  <div class="logo">🧧 MÍT TỜ LEE 🧧</div>
+  <div class="logo">🧧 Mít tờ Lee 🧧</div>
   <div class="subtitle">Lì Xì May Mắn • Xuân 2026</div>
 
   <input id="name" placeholder="Nhập tên của bạn">
@@ -104,7 +110,7 @@ button:active{
   <div class="footer">Chúc mừng năm mới • An khang • Thịnh vượng</div>
 </div>
 
-<!-- Firebase v8 (ổn định cho GitHub Pages) -->
+<!-- Firebase v8 -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
@@ -116,6 +122,8 @@ firebase.initializeApp({
 });
 
 const db = firebase.firestore();
+const btn = document.getElementById("btn");
+const result = document.getElementById("result");
 
 /* deviceId chống bốc nhiều lần */
 let deviceId = localStorage.getItem("lixi_device");
@@ -124,15 +132,28 @@ if(!deviceId){
   localStorage.setItem("lixi_device", deviceId);
 }
 
-document.getElementById("btn").onclick = async () => {
+/* Kiểm tra còn giải không */
+async function checkPrizeAvailable(){
+  const snap = await db.collection("prizes").get();
+  let total = 0;
+  snap.forEach(p => total += p.data().qty);
+
+  if(total <= 0){
+    btn.disabled = true;
+    result.innerHTML = "🔒 <b>Lì xì đã hết – Hẹn năm sau 🎆</b>";
+  }
+}
+checkPrizeAvailable();
+
+btn.onclick = async () => {
   const name = document.getElementById("name").value.trim();
-  const result = document.getElementById("result");
 
   if(!name){
     alert("Vui lòng nhập tên");
     return;
   }
 
+  btn.disabled = true;
   result.innerHTML = "⏳ Đang bốc lì xì...";
 
   const userRef = db.collection("lixi").doc(deviceId);
@@ -171,6 +192,8 @@ document.getElementById("btn").onclick = async () => {
     🧧 <span class="lucky">${prize.name}</span><br>
     💰 ${prize.value}
   `;
+
+  checkPrizeAvailable();
 };
 </script>
 
