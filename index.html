@@ -43,8 +43,16 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  collection,
+  getDocs,
+  runTransaction
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  
   // 🔥 DÁN FIREBASE CONFIG VÀO ĐÂY
   const firebaseConfig = {
   apiKey: "AIzaSyCLGVLJ-S2uyptD8-0I5MrqeOOBE6g2AD0",
