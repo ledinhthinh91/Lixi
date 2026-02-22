@@ -60,8 +60,8 @@ app.get("/result", (req, res) => {
 });
 
 app.listen(PORT, () => console.log("🎊 Lì xì online đã chạy"));
-app.post("/reset-test", (req, res) => {
+app.get("/reset-test", (req, res) => {
   drawnDevices.clear();
   drawnNames.clear();
-  res.json({ ok: true, message: "Đã reset dữ liệu test" });
+  res.send("✅ Đã reset dữ liệu test – có thể bốc lại");
 });
