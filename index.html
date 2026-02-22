@@ -2,150 +2,132 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>🧧 Lì Xì Đầu Năm 2026</title>
+<title>Mít tờ Lee – Lì Xì 2026</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
 body{
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;
-  background:linear-gradient(#fff3e0,#ffe0b2);
+  font-family: Arial, sans-serif;
+  background: linear-gradient(180deg,#ffecd2,#fcb69f);
   text-align:center;
-  padding:40px 16px;
+  padding:24px;
 }
-h1{color:#c62828}
+h1{
+  color:#c62828;
+  margin-bottom:8px;
+}
+.box{
+  background:#fff;
+  max-width:360px;
+  margin:auto;
+  padding:20px;
+  border-radius:14px;
+  box-shadow:0 10px 30px rgba(0,0,0,.15);
+}
 input,button{
   width:100%;
-  max-width:320px;
   padding:14px;
-  margin:12px auto;
+  margin:10px 0;
   font-size:16px;
   border-radius:8px;
 }
 input{border:1px solid #ccc}
 button{
   background:#d32f2f;
-  color:white;
+  color:#fff;
   border:none;
   font-weight:bold;
 }
-button:disabled{background:#aaa}
 #result{
-  margin-top:24px;
-  font-size:20px;
+  margin-top:16px;
+  font-size:18px;
   font-weight:bold;
 }
 .firework{
-  position:fixed;
-  width:6px;height:6px;
-  background:red;
-  animation:boom 1s linear forwards;
+  animation:pop 0.6s ease infinite alternate;
 }
-@keyframes boom{
-  to{
-    transform:translate(var(--x),var(--y)) scale(0);
-    opacity:0;
-  }
+@keyframes pop{
+  from{transform:scale(1)}
+  to{transform:scale(1.05)}
 }
 </style>
 </head>
+
 <body>
 
-<h1>🧧 LÌ XÌ ĐẦU NĂM 2026 🧧</h1>
-<p>Nhập tên – nhấn bốc – chờ điều bất ngờ 🎉</p>
+<h1>🧧 MÍT TỜ LEE 🧧</h1>
+<p>Lì Xì Đầu Năm 2026</p>
 
-<input id="name" placeholder="Nhập tên của bạn">
-<button id="btn" onclick="draw()">🎁 BỐC LÌ XÌ</button>
-
-<div id="result"></div>
+<div class="box">
+  <input id="name" placeholder="Nhập tên của bạn">
+  <button onclick="draw()">🎁 BỐC LÌ XÌ</button>
+  <div id="result"></div>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
-  getFirestore, doc, getDoc, setDoc,
-  collection, getDocs, runTransaction
+  getFirestore, doc, setDoc, getDocs,
+  collection, runTransaction
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* 🔥 FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyCLGVLJ-S2uyptD8-0I5MrqeOOBE6g2AD0",
   authDomain: "premium-bastion-300803.firebaseapp.com",
-  projectId: "premium-bastion-300803"
+  projectId: "premium-bastion-300803",
+  storageBucket: "premium-bastion-300803.firebasestorage.app",
+  messagingSenderId: "665922128360",
+  appId: "1:665922128360:web:65594fbeb2123fb0a07c5d"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* 🔐 ID THIẾT BỊ */
 let deviceId = localStorage.getItem("lixi_device");
 if(!deviceId){
   deviceId = crypto.randomUUID();
   localStorage.setItem("lixi_device",deviceId);
 }
 
-/* 🎆 PHÁO HOA */
-function firework(){
-  for(let i=0;i<20;i++){
-    const f=document.createElement("div");
-    f.className="firework";
-    f.style.left="50%";
-    f.style.top="40%";
-    f.style.setProperty("--x",(Math.random()*300-150)+"px");
-    f.style.setProperty("--y",(Math.random()*300-150)+"px");
-    f.style.background=`hsl(${Math.random()*360},100%,50%)`;
-    document.body.appendChild(f);
-    setTimeout(()=>f.remove(),1000);
-  }
-}
-
-/* 🎁 BỐC LÌ XÌ */
-window.draw = async ()=>{
-  const name=document.getElementById("name").value.trim();
-  const btn=document.getElementById("btn");
-  const result=document.getElementById("result");
-
+async function draw(){
+  const name = document.getElementById("name").value.trim();
+  const result = document.getElementById("result");
   if(!name) return alert("Vui lòng nhập tên");
 
-  btn.disabled=true;
-  result.innerHTML="⏳ Đang bốc lì xì...";
-
   try{
-    await runTransaction(db,async(tran)=>{
-      /* kiểm tra đã bốc */
-      const userRef=doc(db,"lixi",deviceId);
-      const userSnap=await tran.get(userRef);
-      if(userSnap.exists()) throw "❌ Bạn đã bốc lì xì rồi";
+    await runTransaction(db, async (tx)=>{
+      const userRef = doc(db,"lixi",deviceId);
+      const userSnap = await tx.get(userRef);
+      if(userSnap.exists()) throw "❌ Bạn đã bốc rồi";
 
-      /* lấy giải còn */
-      const snap=await getDocs(collection(db,"prizes"));
-      let available=[], total=0;
-      snap.forEach(p=>{
-        const d=p.data();
-        total+=d.qty;
-        if(d.qty>0) available.push({id:p.id,...d});
+      const prizeSnap = await getDocs(collection(db,"prizes"));
+      const available=[];
+      prizeSnap.forEach(p=>{
+        if(p.data().qty>0) available.push({id:p.id,...p.data()});
       });
+      if(!available.length) throw "😢 Đã hết lì xì";
 
-      if(total<=0){
-        btn.disabled=true;
-        throw "🎉 ĐÃ HẾT LÌ XÌ – CHÚC MỪNG NĂM MỚI 🎉";
-      }
+      const prize = available[Math.floor(Math.random()*available.length)];
+      tx.update(doc(db,"prizes",prize.id),{qty:prize.qty-1});
 
-      const prize=available[Math.floor(Math.random()*available.length)];
-      tran.update(doc(db,"prizes",prize.id),{qty:prize.qty-1});
-      tran.set(userRef,{
-        name, prize:prize.name, value:prize.value,
+      tx.set(userRef,{
+        name,
+        prize:prize.name,
+        value:prize.value,
         time:new Date().toISOString()
       });
 
-      result.innerHTML=`
-        🎊 Chúc mừng <b>${name}</b><br>
-        🧧 ${prize.name} – <span style="color:#d32f2f">${prize.value}</span>
-      `;
-      firework();
+      result.innerHTML = `
+        <div class="firework">
+        🎉 <b>${name}</b><br>
+        Nhận được<br>
+        🧧 <span style="color:#d32f2f">${prize.name} – ${prize.value}</span>
+        </div>`;
     });
   }catch(e){
-    result.innerHTML=e;
-    btn.disabled=false;
+    result.innerHTML = e;
   }
-};
+}
 </script>
 
 </body>
