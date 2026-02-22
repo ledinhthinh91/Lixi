@@ -10,10 +10,12 @@ const PORT = process.env.PORT || 3000;
 
 // ===== CẤU HÌNH GIẢI =====
 let prizes = [
-  { name: "Giải Đặc Biệt", value: "1.000.000đ", qty: 1 },
-  { name: "Giải Nhất", value: "500.000đ", qty: 2 },
-  { name: "Giải Nhì", value: "200.000đ", qty: 5 },
-  { name: "Lộc Xuân", value: "50.000đ", qty: 22 }
+  { name: "Giải Lộc Lá", value: "100.000đ", qty: 1 },
+  { name: "Giải Chồi Xuân ", value: "50.000đ", qty: 3 },
+  { name: "Giải Sương Mai ", value: "30.000đ", qty: 5 },
+  { name: "Giải Đào Phai ", value: "10.000đ", qty: 10 },
+  { name: "Giải Tươi Mát ", value: "20.000đ", qty: 5 },
+  { name: "Giải Vui Vẻ", value: "01 Bao cao su Durex", qty: 1 }
 ];
 
 let usedNames = new Set();
