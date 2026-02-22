@@ -9,13 +9,13 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 
 // ===== CẤU HÌNH GIẢI =====
-let prizes = [
-  { name: "Giải Lộc Lá", value: "100.000đ", qty: 1 },
-  { name: "Giải Chồi Xuân ", value: "50.000đ", qty: 3 },
-  { name: "Giải Sương Mai ", value: "30.000đ", qty: 5 },
-  { name: "Giải Đào Phai ", value: "10.000đ", qty: 10 },
-  { name: "Giải Tươi Mát ", value: "20.000đ", qty: 5 },
-  { name: "Giải Vui Vẻ", value: "01 Bao cao su Durex", qty: 1 }
+const PRIZES = [
+  { name: "Lộc Đại Xuân",  value: "100.000đ", qty: 1 },
+  { name: "Lộc Như Ý",     value: "50.000đ",  qty: 3 },
+  { name: "Lộc An Khang",  value: "30.000đ",  qty: 5 },
+  { name: "Lộc Bình An",   value: "20.000đ",  qty: 5 },
+  { name: "Lộc May Mắn",   value: "10.000đ",  qty: 10 },
+  { name: "Lộc Bất Ngờ",   value: "🎁 Quà vui", qty: 1 }
 ];
 
 let usedNames = new Set();
@@ -60,3 +60,8 @@ app.get("/result", (req, res) => {
 });
 
 app.listen(PORT, () => console.log("🎊 Lì xì online đã chạy"));
+app.post("/reset-test", (req, res) => {
+  drawnDevices.clear();
+  drawnNames.clear();
+  res.json({ ok: true, message: "Đã reset dữ liệu test" });
+});
