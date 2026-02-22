@@ -7,48 +7,93 @@
 
 <style>
 body{
-  font-family:Arial;
-  background:#ffecd2;
-  text-align:center;
-  padding:20px;
+  margin:0;
+  min-height:100vh;
+  font-family:'Segoe UI', Arial, sans-serif;
+  background:linear-gradient(180deg,#ffebcd,#fff);
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
-.box{
-  background:#fff;
-  max-width:360px;
-  margin:auto;
-  padding:20px;
-  border-radius:12px;
-}
-button{
-  background:#d32f2f;
-  color:#fff;
-  border:none;
-  padding:14px;
+.card{
   width:100%;
-  border-radius:8px;
-  font-size:16px;
+  max-width:380px;
+  background:#fff;
+  border-radius:22px;
+  padding:26px 22px;
+  box-shadow:0 12px 30px rgba(0,0,0,.18);
+  text-align:center;
+}
+.logo{
+  font-size:30px;
+  font-weight:900;
+  color:#d32f2f;
+}
+.subtitle{
+  margin-top:6px;
+  font-size:15px;
+  color:#888;
 }
 input{
   width:100%;
-  padding:12px;
-  margin-bottom:10px;
+  padding:15px;
+  border-radius:12px;
+  border:1px solid #ddd;
+  font-size:16px;
+  margin-top:18px;
+  outline:none;
 }
-#result{margin-top:15px;font-size:18px;font-weight:bold}
+input:focus{
+  border-color:#d32f2f;
+}
+button{
+  width:100%;
+  padding:15px;
+  margin-top:18px;
+  background:linear-gradient(135deg,#d32f2f,#ff7043);
+  border:none;
+  color:#fff;
+  font-size:18px;
+  border-radius:14px;
+  font-weight:800;
+  cursor:pointer;
+}
+button:active{
+  transform:scale(.96);
+}
+#result{
+  margin-top:22px;
+  font-size:18px;
+  line-height:1.6;
+}
+.lucky{
+  color:#d32f2f;
+  font-weight:900;
+}
+.footer{
+  margin-top:18px;
+  font-size:13px;
+  color:#aaa;
+}
 </style>
 </head>
 
 <body>
 
-<h2>🧧 MÍT TỜ LEE 🧧</h2>
-<p>Lì Xì 2026</p>
+<div class="card">
+  <div class="logo">🧧 Mít tờ Lee 🧧</div>
+  <div class="subtitle">Lì Xì May Mắn • Xuân 2026</div>
 
-<div class="box">
-<input id="name" placeholder="Nhập tên của bạn">
-<button id="btn">🎁 BỐC LÌ XÌ</button>
-<div id="result"></div>
+  <input id="name" placeholder="Nhập tên của bạn">
+
+  <button id="btn">🎁 BỐC LÌ XÌ</button>
+
+  <div id="result"></div>
+
+  <div class="footer">Chúc mừng năm mới • An khang • Thịnh vượng</div>
 </div>
 
-<!-- Firebase v8 -->
+<!-- Firebase v8 (ổn định cho GitHub Pages) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
@@ -61,48 +106,60 @@ firebase.initializeApp({
 
 const db = firebase.firestore();
 
+// tạo deviceId để chặn bốc nhiều lần
 let deviceId = localStorage.getItem("lixi_device");
 if(!deviceId){
-  deviceId = Date.now()+"_"+Math.random();
-  localStorage.setItem("lixi_device",deviceId);
+  deviceId = Date.now() + "_" + Math.random().toString(36).substring(2);
+  localStorage.setItem("lixi_device", deviceId);
 }
 
 document.getElementById("btn").onclick = async () => {
   const name = document.getElementById("name").value.trim();
   const result = document.getElementById("result");
-  if(!name) return alert("Nhập tên");
+
+  if(!name){
+    alert("Vui lòng nhập tên");
+    return;
+  }
+
+  result.innerHTML = "⏳ Đang bốc lì xì...";
 
   const userRef = db.collection("lixi").doc(deviceId);
   const userSnap = await userRef.get();
   if(userSnap.exists){
-    result.innerHTML="❌ Bạn đã bốc rồi";
+    result.innerHTML = "❌ Bạn đã bốc lì xì rồi";
     return;
   }
 
   const prizesSnap = await db.collection("prizes").get();
-  const available=[];
+  const available = [];
   prizesSnap.forEach(p=>{
-    if(p.data().qty>0) available.push(p);
+    if(p.data().qty > 0) available.push(p);
   });
+
   if(!available.length){
-    result.innerHTML="😢 Hết lì xì";
+    result.innerHTML = "😢 Lì xì đã hết";
     return;
   }
 
-  const prizeDoc = available[Math.floor(Math.random()*available.length)];
+  const prizeDoc = available[Math.floor(Math.random() * available.length)];
   const prize = prizeDoc.data();
 
   await db.runTransaction(async t=>{
-    t.update(prizeDoc.ref,{qty:prize.qty-1});
-    t.set(userRef,{
+    t.update(prizeDoc.ref, { qty: prize.qty - 1 });
+    t.set(userRef, {
       name,
-      prize:prize.name,
-      value:prize.value,
-      time:new Date().toISOString()
+      prize: prize.name,
+      value: prize.value,
+      time: new Date().toISOString()
     });
   });
 
-  result.innerHTML=`🎉 ${name}<br>🧧 ${prize.name} – ${prize.value}`;
+  result.innerHTML = `
+    🎉 <span class="lucky">${name}</span><br>
+    🧧 <span class="lucky">${prize.name}</span><br>
+    💰 ${prize.value}
+  `;
 };
 </script>
 
