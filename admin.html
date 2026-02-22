@@ -2,51 +2,58 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Mít tờ Lee - Lì Xì 2026</title>
+<title>Mít tờ Lee – Lì Xì 2026 (ADMIN)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
-body {
-  font-family: Arial;
+body{
+  font-family:Arial;
   background:#fff3e0;
   padding:16px;
 }
-h2 { color:#d32f2f; text-align:center }
-input,button {
+h2{
+  color:#c62828;
+  text-align:center;
+}
+input,button{
   width:100%;
   max-width:320px;
   padding:12px;
   margin:8px auto;
   display:block;
 }
-button {
+button{
   background:#d32f2f;
   color:#fff;
   border:none;
-  border-radius:6px;
+  border-radius:8px;
+  font-weight:bold;
 }
-table {
+table{
   width:100%;
   border-collapse:collapse;
   margin-top:20px;
+  background:#fff;
 }
-th,td {
+th,td{
   border:1px solid #ccc;
   padding:8px;
   font-size:14px;
 }
-th { background:#ffe0b2 }
-#status {
+th{background:#ffe0b2}
+#status{
   text-align:center;
   font-weight:bold;
   margin-top:10px;
 }
 </style>
 </head>
+
 <body>
 
-<h2>🔐 ADMIN – LÌ XÌ 2026</h2>
+<h2>🔐 MÍT TỜ LEE – LÌ XÌ 2026 (ADMIN)</h2>
 
-<input id="pass" type="password" placeholder="Mật khẩu reset">
+<input id="pass" type="password" placeholder="Nhập mật khẩu reset">
 <button onclick="resetAll()">🔄 RESET TOÀN BỘ</button>
 <div id="status"></div>
 
@@ -81,41 +88,38 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
 const RESET_PASS = "reset2026";
 
-async function loadWinners() {
-  const tbody = document.getElementById("list");
-  tbody.innerHTML = "";
-
-  const snap = await getDocs(collection(db, "lixi"));
-  snap.forEach(d => {
-    const x = d.data();
-    tbody.innerHTML += `
-      <tr>
-        <td>${x.name}</td>
-        <td>${x.prize}</td>
-        <td>${x.value}</td>
-        <td>${new Date(x.time).toLocaleString()}</td>
-      </tr>`;
+async function loadWinners(){
+  const list=document.getElementById("list");
+  list.innerHTML="";
+  const snap = await getDocs(collection(db,"lixi"));
+  snap.forEach(d=>{
+    const x=d.data();
+    list.innerHTML+=`
+    <tr>
+      <td>${x.name}</td>
+      <td>${x.prize}</td>
+      <td>${x.value}</td>
+      <td>${new Date(x.time).toLocaleString()}</td>
+    </tr>`;
   });
 }
 
-async function resetAll() {
-  const status = document.getElementById("status");
-  if (document.getElementById("pass").value !== RESET_PASS) {
-    status.innerHTML = "❌ Sai mật khẩu";
+async function resetAll(){
+  const status=document.getElementById("status");
+  if(document.getElementById("pass").value!==RESET_PASS){
+    status.innerHTML="❌ Sai mật khẩu";
     return;
   }
+  status.innerHTML="⏳ Đang reset...";
 
-  status.innerHTML = "⏳ Đang reset...";
-
-  const lixi = await getDocs(collection(db, "lixi"));
-  for (const d of lixi.docs) {
-    await deleteDoc(doc(db, "lixi", d.id));
+  const lixi = await getDocs(collection(db,"lixi"));
+  for(const d of lixi.docs){
+    await deleteDoc(doc(db,"lixi",d.id));
   }
 
-  const defaults = {
+  const defaults={
     "loc-dac-biet":1,
     "loc-dai-xuan":1,
     "loc-nhu-y":3,
@@ -124,18 +128,19 @@ async function resetAll() {
     "loc-may-man":10
   };
 
-  const prizes = await getDocs(collection(db, "prizes"));
-  for (const p of prizes.docs) {
-    if (defaults[p.id] !== undefined) {
+  const prizes=await getDocs(collection(db,"prizes"));
+  for(const p of prizes.docs){
+    if(defaults[p.id]!==undefined){
       await updateDoc(doc(db,"prizes",p.id),{qty:defaults[p.id]});
     }
   }
 
-  status.innerHTML = "✅ RESET XONG – CÓ THỂ BỐC LẠI";
+  status.innerHTML="✅ RESET XONG – SẴN SÀNG BỐC LẠI";
   loadWinners();
 }
 
 loadWinners();
 </script>
+
 </body>
 </html>
