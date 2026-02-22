@@ -7,127 +7,103 @@
 
 <style>
 body{
-  font-family: Arial, sans-serif;
-  background: linear-gradient(180deg,#ffecd2,#fcb69f);
+  font-family:Arial;
+  background:#ffecd2;
   text-align:center;
-  padding:24px;
-}
-h1{
-  color:#c62828;
-  margin-bottom:8px;
+  padding:20px;
 }
 .box{
   background:#fff;
   max-width:360px;
   margin:auto;
   padding:20px;
-  border-radius:14px;
-  box-shadow:0 10px 30px rgba(0,0,0,.15);
+  border-radius:12px;
 }
-input,button{
-  width:100%;
-  padding:14px;
-  margin:10px 0;
-  font-size:16px;
-  border-radius:8px;
-}
-input{border:1px solid #ccc}
 button{
   background:#d32f2f;
   color:#fff;
   border:none;
-  font-weight:bold;
+  padding:14px;
+  width:100%;
+  border-radius:8px;
+  font-size:16px;
 }
-#result{
-  margin-top:16px;
-  font-size:18px;
-  font-weight:bold;
+input{
+  width:100%;
+  padding:12px;
+  margin-bottom:10px;
 }
-.firework{
-  animation:pop 0.6s ease infinite alternate;
-}
-@keyframes pop{
-  from{transform:scale(1)}
-  to{transform:scale(1.05)}
-}
+#result{margin-top:15px;font-size:18px;font-weight:bold}
 </style>
 </head>
 
 <body>
 
-<h1>🧧 MÍT TỜ LEE 🧧</h1>
-<p>Lì Xì Đầu Năm 2026</p>
+<h2>🧧 MÍT TỜ LEE 🧧</h2>
+<p>Lì Xì 2026</p>
 
 <div class="box">
-  <input id="name" placeholder="Nhập tên của bạn">
-  <button onclick="draw()">🎁 BỐC LÌ XÌ</button>
-  <div id="result"></div>
+<input id="name" placeholder="Nhập tên của bạn">
+<button id="btn">🎁 BỐC LÌ XÌ</button>
+<div id="result"></div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getFirestore, doc, setDoc, getDocs,
-  collection, runTransaction
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<!-- Firebase v8 -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
-const firebaseConfig = {
+<script>
+firebase.initializeApp({
   apiKey: "AIzaSyCLGVLJ-S2uyptD8-0I5MrqeOOBE6g2AD0",
   authDomain: "premium-bastion-300803.firebaseapp.com",
-  projectId: "premium-bastion-300803",
-  storageBucket: "premium-bastion-300803.firebasestorage.app",
-  messagingSenderId: "665922128360",
-  appId: "1:665922128360:web:65594fbeb2123fb0a07c5d"
-};
+  projectId: "premium-bastion-300803"
+});
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db = firebase.firestore();
 
 let deviceId = localStorage.getItem("lixi_device");
 if(!deviceId){
-  deviceId = crypto.randomUUID();
+  deviceId = Date.now()+"_"+Math.random();
   localStorage.setItem("lixi_device",deviceId);
 }
 
-async function draw(){
+document.getElementById("btn").onclick = async () => {
   const name = document.getElementById("name").value.trim();
   const result = document.getElementById("result");
-  if(!name) return alert("Vui lòng nhập tên");
+  if(!name) return alert("Nhập tên");
 
-  try{
-    await runTransaction(db, async (tx)=>{
-      const userRef = doc(db,"lixi",deviceId);
-      const userSnap = await tx.get(userRef);
-      if(userSnap.exists()) throw "❌ Bạn đã bốc rồi";
-
-      const prizeSnap = await getDocs(collection(db,"prizes"));
-      const available=[];
-      prizeSnap.forEach(p=>{
-        if(p.data().qty>0) available.push({id:p.id,...p.data()});
-      });
-      if(!available.length) throw "😢 Đã hết lì xì";
-
-      const prize = available[Math.floor(Math.random()*available.length)];
-      tx.update(doc(db,"prizes",prize.id),{qty:prize.qty-1});
-
-      tx.set(userRef,{
-        name,
-        prize:prize.name,
-        value:prize.value,
-        time:new Date().toISOString()
-      });
-
-      result.innerHTML = `
-        <div class="firework">
-        🎉 <b>${name}</b><br>
-        Nhận được<br>
-        🧧 <span style="color:#d32f2f">${prize.name} – ${prize.value}</span>
-        </div>`;
-    });
-  }catch(e){
-    result.innerHTML = e;
+  const userRef = db.collection("lixi").doc(deviceId);
+  const userSnap = await userRef.get();
+  if(userSnap.exists){
+    result.innerHTML="❌ Bạn đã bốc rồi";
+    return;
   }
-}
+
+  const prizesSnap = await db.collection("prizes").get();
+  const available=[];
+  prizesSnap.forEach(p=>{
+    if(p.data().qty>0) available.push(p);
+  });
+  if(!available.length){
+    result.innerHTML="😢 Hết lì xì";
+    return;
+  }
+
+  const prizeDoc = available[Math.floor(Math.random()*available.length)];
+  const prize = prizeDoc.data();
+
+  await db.runTransaction(async t=>{
+    t.update(prizeDoc.ref,{qty:prize.qty-1});
+    t.set(userRef,{
+      name,
+      prize:prize.name,
+      value:prize.value,
+      time:new Date().toISOString()
+    });
+  });
+
+  result.innerHTML=`🎉 ${name}<br>🧧 ${prize.name} – ${prize.value}`;
+};
 </script>
 
 </body>
