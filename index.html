@@ -1,146 +1,234 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <title>Lì xì đầu năm</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #fff3e0;
-      text-align: center;
-      padding: 40px 16px;
-    }
-    h1 { color: #d32f2f; }
-    input, button {
-      width: 100%;
-      max-width: 320px;
-      padding: 14px;
-      font-size: 16px;
-      margin: 10px auto;
-      border-radius: 6px;
-    }
-    button {
-      background: #d32f2f;
-      color: white;
-      border: none;
-    }
-    #result {
-      margin-top: 20px;
-      font-size: 20px;
-      font-weight: bold;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>🧧 Lì Xì Đầu Năm 2026</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+:root{
+  --red:#d32f2f;
+  --gold:#ffb300;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
+  background:linear-gradient(180deg,#fff3e0,#ffe0b2);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+}
+.card{
+  background:#fff;
+  width:100%;
+  max-width:380px;
+  border-radius:20px;
+  padding:26px 20px 28px;
+  box-shadow:0 10px 30px rgba(0,0,0,.15);
+  text-align:center;
+  position:relative;
+}
+.title{
+  font-size:26px;
+  font-weight:800;
+  color:var(--red);
+}
+.subtitle{color:#666;margin-bottom:18px}
+input{
+  width:100%;
+  padding:14px;
+  font-size:16px;
+  border-radius:12px;
+  border:1.5px solid #ddd;
+}
+button{
+  width:100%;
+  margin-top:14px;
+  padding:14px;
+  border:none;
+  border-radius:14px;
+  background:linear-gradient(45deg,var(--red),#b71c1c);
+  color:#fff;
+  font-size:17px;
+  font-weight:700;
+}
+#result{margin-top:18px;font-size:18px}
+.prize{
+  margin-top:10px;
+  background:#fff3e0;
+  border-radius:14px;
+  padding:14px;
+  border:1px dashed var(--red);
+}
+canvas{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:16px;
+}
+th,td{
+  border:1px solid #ddd;
+  padding:8px;
+  font-size:14px;
+}
+th{background:#fbe9e7}
+</style>
 </head>
+
 <body>
 
-<h1>🧧 LÌ XÌ ĐẦU NĂM 🧧</h1>
+<canvas id="fireworks"></canvas>
 
-<input id="name" placeholder="Nhập tên của bạn">
-<button onclick="draw()">🎁 BỐC LÌ XÌ</button>
+<div class="card" id="app">
+  <div class="title">🧧 LÌ XÌ ĐẦU NĂM 2026 🧧</div>
+  <div class="subtitle">Nhập tên – bốc lộc đầu xuân</div>
 
-<div id="result"></div>
+  <input id="name" placeholder="Nhập tên của bạn">
+  <button onclick="draw()">🎁 BỐC LÌ XÌ</button>
+
+  <div id="result"></div>
+</div>
+
+<div class="card" id="admin" style="display:none">
+  <div class="title">📋 DANH SÁCH TRÚNG</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Tên</th>
+        <th>Giải</th>
+        <th>Giá trị</th>
+        <th>Thời gian</th>
+      </tr>
+    </thead>
+    <tbody id="list"></tbody>
+  </table>
+</div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import {
-    getFirestore,
-    doc,
-    runTransaction
-  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getFirestore, doc, runTransaction,
+  collection, getDocs
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  // 🔥 FIREBASE CONFIG (GIỮ NGUYÊN)
-  const firebaseConfig = {
-    apiKey: "AIzaSyCLGVLJ-S2uyptD8-0I5MrqeOOBE6g2AD0",
-    authDomain: "premium-bastion-300803.firebaseapp.com",
-    projectId: "premium-bastion-300803",
-    storageBucket: "premium-bastion-300803.firebasestorage.app",
-    messagingSenderId: "665922128360",
-    appId: "1:665922128360:web:65594fbeb2123fb0a07c5d"
-  };
+/* 🔥 FIREBASE CONFIG */
+const firebaseConfig = {
+  apiKey: "AIzaSyCLGVLJ-S2uyptD8-0I5MrqeOOBE6g2AD0",
+  authDomain: "premium-bastion-300803.firebaseapp.com",
+  projectId: "premium-bastion-300803",
+  storageBucket: "premium-bastion-300803.firebasestorage.app",
+  messagingSenderId: "665922128360",
+  appId: "1:665922128360:web:65594fbeb2123fb0a07c5d"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-  // 📱 ID thiết bị
-  let deviceId = localStorage.getItem("lixi_device");
-  if (!deviceId) {
-    deviceId = crypto.randomUUID();
-    localStorage.setItem("lixi_device", deviceId);
-  }
+/* DEVICE */
+let deviceId = localStorage.getItem("lixi_device");
+if(!deviceId){
+  deviceId = crypto.randomUUID();
+  localStorage.setItem("lixi_device",deviceId);
+}
 
-  // 🎁 ID GIẢI – KHỚP FIRESTORE CỦA BẠN
-  const prizeIds = [
-    "loc-dac-biet",
-    "loc-dai-xuan",
-    "loc-nhu-y",
-    "loc-an-khang",
-    "loc-binh-an",
-    "loc-may-man"
-  ];
+/* ID GIẢI (KHỚP FIRESTORE) */
+const prizeIds = [
+  "loc-dac-biet",
+  "loc-dai-xuan",
+  "loc-nhu-y",
+  "loc-an-khang",
+  "loc-binh-an",
+  "loc-may-man"
+];
 
-  // 🎲 BỐC LÌ XÌ
-  window.draw = async function () {
-    const name = document.getElementById("name").value.trim();
-    const resultDiv = document.getElementById("result");
+/* ADMIN MODE */
+if(new URLSearchParams(location.search).get("admin")==="1"){
+  document.getElementById("app").style.display="none";
+  document.getElementById("admin").style.display="block";
+  loadAdmin();
+}
 
-    if (!name) {
-      alert("Vui lòng nhập tên");
-      return;
-    }
+/* BỐC LÌ XÌ */
+window.draw = async function(){
+  const name=document.getElementById("name").value.trim();
+  const result=document.getElementById("result");
+  if(!name) return alert("Nhập tên trước nhé");
 
-    try {
-      await runTransaction(db, async (transaction) => {
+  try{
+    await runTransaction(db, async(tx)=>{
+      const userRef=doc(db,"lixi",deviceId);
+      if((await tx.get(userRef)).exists()){
+        throw "❌ Thiết bị này đã bốc rồi";
+      }
 
-        // 1️⃣ chặn bốc lại
-        const userRef = doc(db, "lixi", deviceId);
-        const userSnap = await transaction.get(userRef);
-        if (userSnap.exists()) {
-          throw "❌ Thiết bị này đã bốc lì xì rồi";
+      const available=[];
+      for(const id of prizeIds){
+        const ref=doc(db,"prizes",id);
+        const snap=await tx.get(ref);
+        if(snap.exists() && snap.data().qty>0){
+          available.push({ref,...snap.data()});
         }
+      }
+      if(!available.length) throw "😢 Đã hết lì xì";
 
-        // 2️⃣ lấy giải còn số lượng
-        const available = [];
-
-        for (const id of prizeIds) {
-          const ref = doc(db, "prizes", id);
-          const snap = await transaction.get(ref);
-          if (snap.exists() && snap.data().qty > 0) {
-            available.push({ ref, ...snap.data() });
-          }
-        }
-
-        if (available.length === 0) {
-          throw "😢 Đã hết lì xì";
-        }
-
-        // 3️⃣ random
-        const prize = available[Math.floor(Math.random() * available.length)];
-
-        // 4️⃣ trừ số lượng
-        transaction.update(prize.ref, {
-          qty: prize.qty - 1
-        });
-
-        // 5️⃣ lưu người trúng
-        transaction.set(userRef, {
-          name,
-          prize: prize.name,
-          value: prize.value,
-          time: new Date().toISOString()
-        });
-
-        // 6️⃣ hiển thị
-        resultDiv.innerHTML = `
-          🎉 <b>${name}</b> nhận được<br>
-          🧧 <span style="color:#d32f2f">${prize.name} – ${prize.value}</span>
-        `;
+      const prize=available[Math.floor(Math.random()*available.length)];
+      tx.update(prize.ref,{qty:prize.qty-1});
+      tx.set(userRef,{
+        name,prize:prize.name,value:prize.value,
+        time:new Date().toLocaleString("vi-VN")
       });
 
-    } catch (err) {
-      resultDiv.innerHTML = err;
-    }
+      result.innerHTML=`
+        🎉 <b>${name}</b> nhận được
+        <div class="prize">
+          🧧 <b>${prize.name}</b><br>
+          🎁 ${prize.value}
+        </div>`;
+      firework();
+    });
+  }catch(e){
+    result.innerHTML=e;
   }
+}
+
+/* ADMIN LOAD */
+async function loadAdmin(){
+  const body=document.getElementById("list");
+  const snap=await getDocs(collection(db,"lixi"));
+  snap.forEach(d=>{
+    const x=d.data();
+    body.innerHTML+=`
+      <tr>
+        <td>${x.name}</td>
+        <td>${x.prize}</td>
+        <td>${x.value}</td>
+        <td>${x.time}</td>
+      </tr>`;
+  });
+}
+
+/* 🎆 PHÁO HOA */
+const canvas=document.getElementById("fireworks");
+const ctx=canvas.getContext("2d");
+canvas.width=innerWidth;canvas.height=innerHeight;
+function firework(){
+  for(let i=0;i<80;i++){
+    const x=Math.random()*canvas.width;
+    const y=Math.random()*canvas.height/2;
+    ctx.fillStyle=`hsl(${Math.random()*360},100%,60%)`;
+    ctx.beginPath();
+    ctx.arc(x,y,3,0,Math.PI*2);
+    ctx.fill();
+  }
+  setTimeout(()=>ctx.clearRect(0,0,canvas.width,canvas.height),800);
+}
 </script>
 
 </body>
