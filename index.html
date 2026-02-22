@@ -2,28 +2,31 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Mít tờ Lee – Lì Xì 2026</title>
+<title>Mít tờ Lee - Lì Xì 2026</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
 body{
   margin:0;
   min-height:100vh;
-  font-family:'Segoe UI', Arial, sans-serif;
-  background:linear-gradient(180deg,#ffebcd,#fff);
+  background:linear-gradient(#fff3e0,#fffaf2);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial;
   display:flex;
-  align-items:center;
   justify-content:center;
+  align-items:center;
+  padding:16px;
 }
+
 .card{
   width:100%;
-  max-width:380px;
+  max-width:420px;
   background:#fff;
-  border-radius:22px;
-  padding:26px 22px;
-  box-shadow:0 12px 30px rgba(0,0,0,.18);
+  border-radius:20px;
+  padding:28px 20px 32px;
+  box-shadow:0 20px 50px rgba(0,0,0,.12);
   text-align:center;
 }
+
 .logo{
   font-size:30px;
   font-weight:900;
@@ -31,49 +34,55 @@ body{
 }
 .subtitle{
   margin-top:6px;
-  font-size:15px;
   color:#888;
 }
-input{
+
+input,button{
   width:100%;
-  padding:15px;
-  border-radius:12px;
-  border:1px solid #ddd;
-  font-size:16px;
+  height:56px;
   margin-top:18px;
-  outline:none;
+  border-radius:14px;
+  font-size:17px;
+  box-sizing:border-box;
+}
+
+/* INPUT */
+input{
+  padding:0 16px;
+  border:1.5px solid #ddd;
 }
 input:focus{
+  outline:none;
   border-color:#d32f2f;
 }
+
+/* BUTTON */
 button{
-  width:100%;
-  padding:15px;
-  margin-top:18px;
-  background:linear-gradient(135deg,#d32f2f,#ff7043);
   border:none;
-  color:#fff;
-  font-size:18px;
-  border-radius:14px;
   font-weight:800;
-  cursor:pointer;
+  color:#fff;
+  background:linear-gradient(135deg,#d32f2f,#ff7043);
 }
-button:active{
-  transform:scale(.96);
-}
+button:active{ transform:scale(.97); }
+
 #result{
   margin-top:22px;
-  font-size:18px;
-  line-height:1.6;
+  font-size:20px;
+  font-weight:700;
 }
-.lucky{
-  color:#d32f2f;
-  font-weight:900;
-}
+
 .footer{
   margin-top:18px;
-  font-size:13px;
-  color:#aaa;
+  color:#999;
+  font-size:14px;
+}
+
+/* PHÁO HOA */
+canvas{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:999;
 }
 </style>
 </head>
@@ -85,81 +94,122 @@ button:active{
   <div class="subtitle">Lì Xì May Mắn • Xuân 2026</div>
 
   <input id="name" placeholder="Nhập tên của bạn">
-
-  <button id="btn">🎁 BỐC LÌ XÌ</button>
+  <button id="btn" onclick="draw()">🎁 BỐC LÌ XÌ</button>
 
   <div id="result"></div>
-
   <div class="footer">Chúc mừng năm mới • An khang • Thịnh vượng</div>
 </div>
 
-<!-- Firebase v8 (ổn định cho GitHub Pages) -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<canvas id="fireworks"></canvas>
 
-<script>
-firebase.initializeApp({
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getFirestore, doc, getDoc,
+  collection, getDocs, runTransaction
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+/* 🔥 FIREBASE CONFIG */
+const firebaseConfig = {
   apiKey: "AIzaSyCLGVLJ-S2uyptD8-0I5MrqeOOBE6g2AD0",
   authDomain: "premium-bastion-300803.firebaseapp.com",
-  projectId: "premium-bastion-300803"
-});
+  projectId: "premium-bastion-300803",
+  storageBucket: "premium-bastion-300803.firebasestorage.app",
+  messagingSenderId: "665922128360",
+  appId: "1:665922128360:web:65594fbeb2123fb0a07c5d"
+};
 
-const db = firebase.firestore();
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-// tạo deviceId để chặn bốc nhiều lần
+/* DEVICE ID */
 let deviceId = localStorage.getItem("lixi_device");
 if(!deviceId){
-  deviceId = Date.now() + "_" + Math.random().toString(36).substring(2);
-  localStorage.setItem("lixi_device", deviceId);
+  deviceId = crypto.randomUUID();
+  localStorage.setItem("lixi_device",deviceId);
 }
 
-document.getElementById("btn").onclick = async () => {
+/* BỐC LÌ XÌ */
+async function draw(){
   const name = document.getElementById("name").value.trim();
+  if(!name) return alert("Vui lòng nhập tên");
+
   const result = document.getElementById("result");
+  const btn = document.getElementById("btn");
+  btn.disabled = true;
 
-  if(!name){
-    alert("Vui lòng nhập tên");
-    return;
-  }
+  try{
+    await runTransaction(db, async (t)=>{
+      const userRef = doc(db,"lixi",deviceId);
+      if((await t.get(userRef)).exists()){
+        throw "❌ Thiết bị này đã bốc rồi";
+      }
 
-  result.innerHTML = "⏳ Đang bốc lì xì...";
+      const prizes = await getDocs(collection(db,"prizes"));
+      const available=[];
+      prizes.forEach(p=>{
+        const d=p.data();
+        if(d.qty>0) available.push({id:p.id,...d});
+      });
+      if(!available.length) throw "😢 Đã hết lì xì";
 
-  const userRef = db.collection("lixi").doc(deviceId);
-  const userSnap = await userRef.get();
-  if(userSnap.exists){
-    result.innerHTML = "❌ Bạn đã bốc lì xì rồi";
-    return;
-  }
+      const prize = available[Math.floor(Math.random()*available.length)];
+      t.update(doc(db,"prizes",prize.id),{qty:prize.qty-1});
+      t.set(userRef,{
+        name,
+        prize:prize.name,
+        value:prize.value,
+        time:new Date().toISOString()
+      });
 
-  const prizesSnap = await db.collection("prizes").get();
-  const available = [];
-  prizesSnap.forEach(p=>{
-    if(p.data().qty > 0) available.push(p);
-  });
-
-  if(!available.length){
-    result.innerHTML = "😢 Lì xì đã hết";
-    return;
-  }
-
-  const prizeDoc = available[Math.floor(Math.random() * available.length)];
-  const prize = prizeDoc.data();
-
-  await db.runTransaction(async t=>{
-    t.update(prizeDoc.ref, { qty: prize.qty - 1 });
-    t.set(userRef, {
-      name,
-      prize: prize.name,
-      value: prize.value,
-      time: new Date().toISOString()
+      result.innerHTML=`
+        🎉 <b>${name}</b><br>
+        🧧 <span style="color:#d32f2f">${prize.name} – ${prize.value}</span>
+      `;
+      launchFireworks();
     });
-  });
+  }catch(e){
+    result.innerHTML = e;
+  }
+  btn.disabled=false;
+}
 
-  result.innerHTML = `
-    🎉 <span class="lucky">${name}</span><br>
-    🧧 <span class="lucky">${prize.name}</span><br>
-    💰 ${prize.value}
-  `;
+/* 🎆 PHÁO HOA */
+const canvas=document.getElementById("fireworks");
+const ctx=canvas.getContext("2d");
+canvas.width=innerWidth;
+canvas.height=innerHeight;
+
+function launchFireworks(){
+  let particles=[];
+  for(let i=0;i<120;i++){
+    particles.push({
+      x:canvas.width/2,
+      y:canvas.height/2,
+      vx:(Math.random()-0.5)*8,
+      vy:(Math.random()-0.5)*8,
+      life:60+Math.random()*20,
+      color:`hsl(${Math.random()*360},100%,60%)`
+    });
+  }
+  function animate(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p=>{
+      p.x+=p.vx;
+      p.y+=p.vy;
+      p.life--;
+      ctx.fillStyle=p.color;
+      ctx.fillRect(p.x,p.y,3,3);
+    });
+    particles=particles.filter(p=>p.life>0);
+    if(particles.length) requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+window.onresize=()=>{
+  canvas.width=innerWidth;
+  canvas.height=innerHeight;
 };
 </script>
 
