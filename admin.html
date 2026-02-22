@@ -6,22 +6,94 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body{font-family:Arial;background:#fff3e0;padding:16px}
-button{background:#d32f2f;color:#fff;border:none;padding:12px;border-radius:6px}
-table{width:100%;border-collapse:collapse;margin-top:10px}
-td,th{border:1px solid #ccc;padding:6px;font-size:14px}
+body{
+  font-family:'Segoe UI', Arial, sans-serif;
+  background:#fff3e0;
+  padding:16px;
+}
+
+h3{
+  font-size:22px;
+  margin-bottom:16px;
+}
+
+/* HÀNG INPUT + BUTTON */
+.control{
+  display:flex;
+  gap:10px;
+  margin-bottom:14px;
+}
+
+/* INPUT + BUTTON ĐỀU NHAU */
+input, button{
+  height:52px;
+  font-size:16px;
+  border-radius:10px;
+  box-sizing:border-box;
+}
+
+/* INPUT */
+input{
+  flex:1;
+  padding:0 14px;
+  border:1px solid #ccc;
+}
+
+/* BUTTON */
+button{
+  padding:0 18px;
+  border:none;
+  background:#d32f2f;
+  color:#fff;
+  font-weight:700;
+  cursor:pointer;
+}
+button:active{
+  transform:scale(.97);
+}
+
+#status{
+  margin:10px 0;
+  font-weight:700;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:12px;
+  background:#fff;
+}
+th, td{
+  border:1px solid #ccc;
+  padding:8px;
+  font-size:14px;
+  text-align:left;
+}
+th{
+  background:#ffe0b2;
+}
 </style>
 </head>
 
 <body>
 
 <h3>🔐 Mít tờ Lee – Admin</h3>
-<input id="pass" type="password" placeholder="Mật khẩu reset">
-<button id="reset">Reset</button>
+
+<div class="control">
+  <input id="pass" type="password" placeholder="Mật khẩu reset">
+  <button id="reset">Reset</button>
+</div>
+
 <div id="status"></div>
 
 <table>
-<thead><tr><th>Tên</th><th>Giải</th><th>Giá trị</th></tr></thead>
+<thead>
+<tr>
+  <th>Tên</th>
+  <th>Giải</th>
+  <th>Giá trị</th>
+</tr>
+</thead>
 <tbody id="list"></tbody>
 </table>
 
@@ -33,29 +105,37 @@ firebase.initializeApp({
   apiKey: "AIzaSyCLGVLJ-S2uyptD8-0I5MrqeOOBE6g2AD0",
   projectId: "premium-bastion-300803"
 });
-const db=firebase.firestore();
-const PASS="reset2026";
+
+const db = firebase.firestore();
+const PASS = "reset2026";
 
 async function load(){
-  const list=document.getElementById("list");
-  list.innerHTML="";
-  const snap=await db.collection("lixi").get();
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+  const snap = await db.collection("lixi").get();
   snap.forEach(d=>{
-    const x=d.data();
-    list.innerHTML+=`<tr><td>${x.name}</td><td>${x.prize}</td><td>${x.value}</td></tr>`;
+    const x = d.data();
+    list.innerHTML += `
+      <tr>
+        <td>${x.name}</td>
+        <td>${x.prize}</td>
+        <td>${x.value}</td>
+      </tr>`;
   });
 }
 
-document.getElementById("reset").onclick=async()=>{
-  if(document.getElementById("pass").value!==PASS){
-    alert("Sai mật khẩu");return;
+document.getElementById("reset").onclick = async () => {
+  if(document.getElementById("pass").value !== PASS){
+    alert("Sai mật khẩu");
+    return;
   }
-  document.getElementById("status").innerHTML="Đang reset dữ liệu...";
 
-  const lixi=await db.collection("lixi").get();
+  document.getElementById("status").innerHTML = "⏳ Đang reset dữ liệu...";
+
+  const lixi = await db.collection("lixi").get();
   for(const d of lixi.docs) await d.ref.delete();
 
-  const defaults={
+  const defaults = {
     "loc-dac-biet":1,
     "loc-dai-xuan":1,
     "loc-nhu-y":3,
@@ -64,12 +144,14 @@ document.getElementById("reset").onclick=async()=>{
     "loc-may-man":10
   };
 
-  const prizes=await db.collection("prizes").get();
+  const prizes = await db.collection("prizes").get();
   for(const p of prizes.docs){
-    if(defaults[p.id]!=null) await p.ref.update({qty:defaults[p.id]});
+    if(defaults[p.id] != null){
+      await p.ref.update({ qty: defaults[p.id] });
+    }
   }
 
-  document.getElementById("status").innerHTML="✅ Đã reset hoàn tất";
+  document.getElementById("status").innerHTML = "✅ Đã reset hoàn tất";
   load();
 };
 
