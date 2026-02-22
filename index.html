@@ -65,13 +65,16 @@
     localStorage.setItem("lixi_device", deviceId);
   }
 
-  const prizes = [
-    "50.000đ",
-    "100.000đ",
-    "200.000đ",
-    "300.000đ",
-    "500.000đ"
-  ];
+  const PRIZES = [
+  { name: "🎁 Lộc Đặc Biệt", value: "Quà bất ngờ", qty: 1 },
+
+  { name: "Lộc Đại Xuân",   value: "100.000đ", qty: 1 },
+  { name: "Lộc Như Ý",      value: "50.000đ",  qty: 3 },
+  { name: "Lộc An Khang",   value: "30.000đ",  qty: 5 },
+  { name: "Lộc Bình An",    value: "20.000đ",  qty: 5 },
+  { name: "Lộc May Mắn",    value: "10.000đ",  qty: 10 }
+];
+// 👉 Tổng: 1 + 1 + 3 + 5 + 5 + 10 = 25 giải
 
   window.draw = async function () {
     const name = document.getElementById("name").value.trim();
