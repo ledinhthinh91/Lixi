@@ -15,9 +15,9 @@ td,th{border:1px solid #ccc;padding:6px;font-size:14px}
 
 <body>
 
-<h3>🔐 MÍT TỜ LEE – ADMIN</h3>
+<h3>🔐 Mít tờ Lee – Admin</h3>
 <input id="pass" type="password" placeholder="Mật khẩu reset">
-<button id="reset">RESET</button>
+<button id="reset">Reset</button>
 <div id="status"></div>
 
 <table>
@@ -50,7 +50,7 @@ document.getElementById("reset").onclick=async()=>{
   if(document.getElementById("pass").value!==PASS){
     alert("Sai mật khẩu");return;
   }
-  document.getElementById("status").innerHTML="Đang reset...";
+  document.getElementById("status").innerHTML="Đang reset dữ liệu...";
 
   const lixi=await db.collection("lixi").get();
   for(const d of lixi.docs) await d.ref.delete();
@@ -69,7 +69,7 @@ document.getElementById("reset").onclick=async()=>{
     if(defaults[p.id]!=null) await p.ref.update({qty:defaults[p.id]});
   }
 
-  document.getElementById("status").innerHTML="✅ Reset xong";
+  document.getElementById("status").innerHTML="✅ Đã reset hoàn tất";
   load();
 };
 
