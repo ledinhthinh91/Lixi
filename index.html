@@ -88,52 +88,63 @@ import {
   const name = document.getElementById("name").value.trim();
   if (!name) return alert("Vui lòng nhập tên");
 
-  const deviceId = localStorage.getItem("lixi_device");
   const resultDiv = document.getElementById("result");
+  const deviceId = localStorage.getItem("lixi_device");
 
-  // ❌ kiểm tra thiết bị đã bốc chưa
-  const userRef = doc(db, "lixi", deviceId);
-  const userSnap = await getDoc(userRef);
-  if (userSnap.exists()) {
-    resultDiv.innerHTML = "❌ Thiết bị này đã bốc lì xì rồi";
-    return;
+  try {
+    await runTransaction(db, async (transaction) => {
+
+      // 1️⃣ kiểm tra thiết bị đã bốc chưa
+      const userRef = doc(db, "lixi", deviceId);
+      const userSnap = await transaction.get(userRef);
+      if (userSnap.exists()) {
+        throw "❌ Thiết bị này đã bốc lì xì rồi";
+      }
+
+      // 2️⃣ lấy danh sách giải còn lại
+      const prizeSnap = await getDocs(collection(db, "prizes"));
+      const available = [];
+
+      prizeSnap.forEach(p => {
+        const d = p.data();
+        if (d.qty > 0) {
+          available.push({ id: p.id, ...d });
+        }
+      });
+
+      if (available.length === 0) {
+        throw "😢 Đã hết lì xì";
+      }
+
+      // 3️⃣ random giải
+      const prize = available[Math.floor(Math.random() * available.length)];
+      const prizeRef = doc(db, "prizes", prize.id);
+
+      // 4️⃣ trừ số lượng
+      transaction.update(prizeRef, {
+        qty: prize.qty - 1
+      });
+
+      // 5️⃣ lưu kết quả người trúng
+      transaction.set(userRef, {
+        name,
+        prize: prize.name,
+        value: prize.value,
+        time: new Date().toISOString()
+      });
+
+      // 6️⃣ hiển thị kết quả
+      resultDiv.innerHTML = `
+        🎉 <b>${name}</b> nhận được<br>
+        🧧 <span style="color:#d32f2f">${prize.name} – ${prize.value}</span>
+      `;
+    });
+
+  } catch (err) {
+    resultDiv.innerHTML = typeof err === "string"
+      ? err
+      : "⚠️ Có lỗi xảy ra, vui lòng thử lại";
   }
-
-  // 🔍 lấy danh sách giải còn lại
-  const prizeSnap = await getDocs(collection(db, "prizes"));
-  const available = [];
-
-  prizeSnap.forEach(docSnap => {
-    const p = docSnap.data();
-    if (p.qty > 0) {
-      available.push({ id: docSnap.id, ...p });
-    }
-  });
-
-  if (available.length === 0) {
-    resultDiv.innerHTML = "😢 Đã hết lì xì";
-    return;
-  }
-
-  // 🎲 random giải còn số lượng
-  const prize = available[Math.floor(Math.random() * available.length)];
-
-  // 🔥 ghi kết quả + trừ số lượng
-  await setDoc(userRef, {
-    name,
-    prize: prize.name,
-    value: prize.value,
-    time: new Date().toISOString()
-  });
-
-  await updateDoc(doc(db, "prizes", prize.id), {
-    qty: prize.qty - 1
-  });
-
-  resultDiv.innerHTML = `
-    🎉 <b>${name}</b> nhận được<br>
-    🧧 <span style="color:#d32f2f">${prize.name} – ${prize.value}</span>
-  `;
 }
 </script>
 
