@@ -1,120 +1,141 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Admin Lì Xì 2026</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body {
-      font-family: Arial;
-      background: #fff3e0;
-      padding: 20px;
-      text-align: center;
-    }
-    h2 { color: #d32f2f; }
-    input, button {
-      padding: 12px;
-      width: 90%;
-      max-width: 320px;
-      margin: 8px auto;
-      display: block;
-      font-size: 16px;
-    }
-    button {
-      background: #d32f2f;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-    }
-    #status {
-      margin-top: 12px;
-      font-weight: bold;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Admin Lì Xì 2026</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body {
+  font-family: Arial;
+  background:#fff3e0;
+  padding:16px;
+}
+h2 { color:#d32f2f; text-align:center }
+input,button {
+  width:100%;
+  max-width:320px;
+  padding:12px;
+  margin:8px auto;
+  display:block;
+}
+button {
+  background:#d32f2f;
+  color:#fff;
+  border:none;
+  border-radius:6px;
+}
+table {
+  width:100%;
+  border-collapse:collapse;
+  margin-top:20px;
+}
+th,td {
+  border:1px solid #ccc;
+  padding:8px;
+  font-size:14px;
+}
+th { background:#ffe0b2 }
+#status {
+  text-align:center;
+  font-weight:bold;
+  margin-top:10px;
+}
+</style>
 </head>
 <body>
 
-<h2>🔐 ADMIN – RESET LÌ XÌ</h2>
+<h2>🔐 ADMIN – LÌ XÌ 2026</h2>
 
-<input id="pass" type="password" placeholder="Nhập mật khẩu reset">
+<input id="pass" type="password" placeholder="Mật khẩu reset">
 <button onclick="resetAll()">🔄 RESET TOÀN BỘ</button>
-
 <div id="status"></div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import {
-    getFirestore,
-    collection,
-    getDocs,
-    deleteDoc,
-    doc,
-    updateDoc
-  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<h3>📋 DANH SÁCH ĐÃ TRÚNG</h3>
+<table>
+<thead>
+<tr>
+  <th>Tên</th>
+  <th>Giải</th>
+  <th>Giá trị</th>
+  <th>Thời gian</th>
+</tr>
+</thead>
+<tbody id="list"></tbody>
+</table>
 
-  // 🔥 Firebase config (GIỮ NGUYÊN CỦA ANH)
-  const firebaseConfig = {
-    apiKey: "AIzaSyCLGVLJ-S2uyptD8-0I5MrqeOOBE6g2AD0",
-    authDomain: "premium-bastion-300803.firebaseapp.com",
-    projectId: "premium-bastion-300803",
-    storageBucket: "premium-bastion-300803.firebasestorage.app",
-    messagingSenderId: "665922128360",
-    appId: "1:665922128360:web:65594fbeb2123fb0a07c5d"
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getFirestore, collection, getDocs,
+  deleteDoc, doc, updateDoc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCLGVLJ-S2uyptD8-0I5MrqeOOBE6g2AD0",
+  authDomain: "premium-bastion-300803.firebaseapp.com",
+  projectId: "premium-bastion-300803",
+  storageBucket: "premium-bastion-300803.firebasestorage.app",
+  messagingSenderId: "665922128360",
+  appId: "1:665922128360:web:65594fbeb2123fb0a07c5d"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const RESET_PASS = "reset2026";
+
+async function loadWinners() {
+  const tbody = document.getElementById("list");
+  tbody.innerHTML = "";
+
+  const snap = await getDocs(collection(db, "lixi"));
+  snap.forEach(d => {
+    const x = d.data();
+    tbody.innerHTML += `
+      <tr>
+        <td>${x.name}</td>
+        <td>${x.prize}</td>
+        <td>${x.value}</td>
+        <td>${new Date(x.time).toLocaleString()}</td>
+      </tr>`;
+  });
+}
+
+async function resetAll() {
+  const status = document.getElementById("status");
+  if (document.getElementById("pass").value !== RESET_PASS) {
+    status.innerHTML = "❌ Sai mật khẩu";
+    return;
+  }
+
+  status.innerHTML = "⏳ Đang reset...";
+
+  const lixi = await getDocs(collection(db, "lixi"));
+  for (const d of lixi.docs) {
+    await deleteDoc(doc(db, "lixi", d.id));
+  }
+
+  const defaults = {
+    "loc-dac-biet":1,
+    "loc-dai-xuan":1,
+    "loc-nhu-y":3,
+    "loc-an-khang":5,
+    "loc-binh-an":5,
+    "loc-may-man":10
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  const RESET_PASS = "reset2026";
-
-  async function resetAll() {
-    const status = document.getElementById("status");
-    const pass = document.getElementById("pass").value;
-
-    if (pass !== RESET_PASS) {
-      status.innerHTML = "❌ Sai mật khẩu";
-      return;
-    }
-
-    status.innerHTML = "⏳ Đang reset, vui lòng chờ...";
-
-    try {
-      // 1️⃣ Xoá danh sách người đã trúng
-      const lixiSnap = await getDocs(collection(db, "lixi"));
-      for (const d of lixiSnap.docs) {
-        await deleteDoc(doc(db, "lixi", d.id));
-      }
-
-      // 2️⃣ Reset lại số lượng giải
-      const prizesSnap = await getDocs(collection(db, "prizes"));
-      for (const p of prizesSnap.docs) {
-        const id = p.id;
-
-        const DEFAULT_QTY = {
-          "loc-dac-biet": 1,
-          "loc-dai-xuan": 1,
-          "loc-nhu-y": 3,
-          "loc-an-khang": 5,
-          "loc-binh-an": 5,
-          "loc-may-man": 10
-        };
-
-        if (DEFAULT_QTY[id] !== undefined) {
-          await updateDoc(doc(db, "prizes", id), {
-            qty: DEFAULT_QTY[id]
-          });
-        }
-      }
-
-      status.innerHTML = "✅ RESET THÀNH CÔNG – CÓ THỂ BỐC LẠI 🎉";
-      document.getElementById("pass").value = "";
-
-    } catch (e) {
-      console.error(e);
-      status.innerHTML = "⚠️ Lỗi reset – kiểm tra Firestore Rules";
+  const prizes = await getDocs(collection(db, "prizes"));
+  for (const p of prizes.docs) {
+    if (defaults[p.id] !== undefined) {
+      await updateDoc(doc(db,"prizes",p.id),{qty:defaults[p.id]});
     }
   }
-</script>
 
+  status.innerHTML = "✅ RESET XONG – CÓ THỂ BỐC LẠI";
+  loadWinners();
+}
+
+loadWinners();
+</script>
 </body>
 </html>
