@@ -25,8 +25,22 @@ button{
   border-radius:6px
 }
 #log{margin-top:20px;font-weight:bold}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:20px;
+}
+th,td{
+  border:1px solid #ccc;
+  padding:8px;
+  font-size:14px;
+}
+th{
+  background:#ffe0b2;
+}
 </style>
 </head>
+
 <body>
 
 <h2>🔐 ADMIN LÌ XÌ</h2>
@@ -35,6 +49,15 @@ button{
 <button onclick="resetAll()">♻️ RESET TOÀN BỘ</button>
 
 <div id="log"></div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Tên</th><th>Giải</th><th>Giá trị</th><th>Thời gian</th>
+    </tr>
+  </thead>
+  <tbody id="users"></tbody>
+</table>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -49,41 +72,64 @@ const firebaseConfig = {
   projectId: "premium-bastion-300803"
 };
 
-const ADMIN_PASS = "lixi2026"; // 🔐 đổi mật khẩu ở đây
+const ADMIN_PASS = "lixi2026"; // 🔐 đổi nếu cần
 
-const PRIZES_RESET = [
-  { id:"dacbiet", qty:1 },
-  { id:"nhat", qty:2 },
-  { id:"nhi", qty:3 },
-  { id:"ba", qty:5 },
-  { id:"khuyenkhich", qty:14 }
+const PRIZE_RESET = [
+  { id:"loc-dac-biet", qty:1 },
+  { id:"loc-dai-xuan", qty:1 },
+  { id:"loc-nhu-y", qty:3 },
+  { id:"loc-an-khang", qty:5 },
+  { id:"loc-binh-an", qty:5 },
+  { id:"loc-may-man", qty:10 }
 ];
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 window.resetAll = async () => {
-  const pass = document.getElementById("pass").value;
   const log = document.getElementById("log");
+  const pass = document.getElementById("pass").value;
 
   if(pass !== ADMIN_PASS){
     log.innerHTML = "❌ Sai mật khẩu";
     return;
   }
 
-  // xoá kết quả trúng
-  const users = await getDocs(collection(db,"lixi"));
-  for(const d of users.docs){
+  log.innerHTML = "⏳ Đang reset...";
+
+  // xoá danh sách trúng
+  const usersSnap = await getDocs(collection(db,"lixi"));
+  for(const d of usersSnap.docs){
     await deleteDoc(doc(db,"lixi",d.id));
   }
 
-  // reset lại số lượng giải
-  for(const p of PRIZES_RESET){
+  // reset số lượng prize
+  for(const p of PRIZE_RESET){
     await updateDoc(doc(db,"prizes",p.id),{qty:p.qty});
   }
 
-  log.innerHTML = "✅ RESET THÀNH CÔNG – CÓ THỂ BỐC LẠI";
+  log.innerHTML = "✅ RESET HOÀN TẤT";
+  loadUsers();
 };
+
+async function loadUsers(){
+  const body = document.getElementById("users");
+  body.innerHTML = "";
+  const snap = await getDocs(collection(db,"lixi"));
+  snap.forEach(d=>{
+    const x = d.data();
+    body.innerHTML += `
+      <tr>
+        <td>${x.name}</td>
+        <td>${x.prize}</td>
+        <td>${x.value}</td>
+        <td>${x.time}</td>
+      </tr>`;
+  });
+}
+
+loadUsers();
 </script>
+
 </body>
 </html>
