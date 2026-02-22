@@ -76,28 +76,57 @@
 ];
 // 👉 Tổng: 1 + 1 + 3 + 5 + 5 + 10 = 25 giải
 
-  window.draw = async function () {
-    const name = document.getElementById("name").value.trim();
-    if (!name) return alert("Vui lòng nhập tên");
+  async function draw() {
+  const name = document.getElementById("name").value.trim();
+  if (!name) return alert("Vui lòng nhập tên");
 
-    const ref = doc(db, "lixi", deviceId);
-    const snap = await getDoc(ref);
+  const deviceId = localStorage.getItem("lixi_device");
+  const resultDiv = document.getElementById("result");
 
-    if (snap.exists()) {
-      document.getElementById("result").innerHTML = "❌ Thiết bị này đã bốc lì xì rồi";
-      return;
-    }
-
-    const prize = prizes[Math.floor(Math.random() * prizes.length)];
-
-    await setDoc(ref, {
-      name,
-      prize,
-      time: new Date().toISOString()
-    });
-
-    document.getElementById("result").innerHTML = `🎉 ${name} nhận được <br><span style="color:#d32f2f">${prize}</span>`;
+  // ❌ kiểm tra thiết bị đã bốc chưa
+  const userRef = doc(db, "lixi", deviceId);
+  const userSnap = await getDoc(userRef);
+  if (userSnap.exists()) {
+    resultDiv.innerHTML = "❌ Thiết bị này đã bốc lì xì rồi";
+    return;
   }
+
+  // 🔍 lấy danh sách giải còn lại
+  const prizeSnap = await getDocs(collection(db, "prizes"));
+  const available = [];
+
+  prizeSnap.forEach(docSnap => {
+    const p = docSnap.data();
+    if (p.qty > 0) {
+      available.push({ id: docSnap.id, ...p });
+    }
+  });
+
+  if (available.length === 0) {
+    resultDiv.innerHTML = "😢 Đã hết lì xì";
+    return;
+  }
+
+  // 🎲 random giải còn số lượng
+  const prize = available[Math.floor(Math.random() * available.length)];
+
+  // 🔥 ghi kết quả + trừ số lượng
+  await setDoc(userRef, {
+    name,
+    prize: prize.name,
+    value: prize.value,
+    time: new Date().toISOString()
+  });
+
+  await updateDoc(doc(db, "prizes", prize.id), {
+    qty: prize.qty - 1
+  });
+
+  resultDiv.innerHTML = `
+    🎉 <b>${name}</b> nhận được<br>
+    🧧 <span style="color:#d32f2f">${prize.name} – ${prize.value}</span>
+  `;
+}
 </script>
 
 </body>
