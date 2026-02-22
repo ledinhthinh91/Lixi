@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lì Xì Đầu Năm</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(#ffebcc, #fff);
+  text-align: center;
+  margin: 0;
+  padding: 0;
+}
+.box {
+  margin-top: 70px;
+  padding: 20px;
+}
+h1 {
+  color: #d32f2f;
+}
+input {
+  width: 90%;
+  max-width: 320px;
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+button {
+  margin-top: 15px;
+  width: 90%;
+  max-width: 320px;
+  padding: 14px;
+  font-size: 18px;
+  background: #d32f2f;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+}
+button:disabled {
+  background: #999;
+}
+#result {
+  margin-top: 25px;
+  font-size: 18px;
+}
+.footer {
+  margin-top: 40px;
+  color: #777;
+  font-size: 13px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <h1>🎊 LÌ XÌ ĐẦU NĂM 🎊</h1>
+
+  <input id="name" placeholder="Nhập tên của bạn" />
+  <br>
+  <button id="btn" onclick="draw()">🎁 BỐC LÌ XÌ</button>
+
+  <div id="result"></div>
+
+  <div class="footer">
+    Chúc bạn năm mới an khang – may mắn 🍀
+  </div>
+</div>
+
+<script>
+/* 🔴 THAY LINK RENDER TẠI ĐÂY */
+const API = "https://YOUR_RENDER_URL";
+
+let deviceId = localStorage.getItem("lixi_device");
+if (!deviceId) {
+  deviceId = crypto.randomUUID();
+  localStorage.setItem("lixi_device", deviceId);
+}
+
+if (localStorage.getItem("lixi_done")) {
+  document.getElementById("result").innerHTML =
+    "❌ <b>Thiết bị này đã bốc lì xì rồi</b>";
+  document.getElementById("btn").disabled = true;
+}
+
+async function draw() {
+  const name = document.getElementById("name").value.trim();
+  if (!name) {
+    alert("Vui lòng nhập tên");
+    return;
+  }
+
+  document.getElementById("btn").disabled = true;
+  document.getElementById("result").innerHTML = "⏳ Đang mở bao lì xì...";
+
+  try {
+    const res = await fetch(API + "/draw", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, deviceId })
+    });
+
+    const data = await res.json();
+
+    if (data.error) {
+      document.getElementById("result").innerHTML =
+        "❌ <b>" + data.error + "</b>";
+      document.getElementById("btn").disabled = false;
+    } else {
+      localStorage.setItem("lixi_done", "1");
+      document.getElementById("result").innerHTML =
+        "🎉 <b>CHÚC MỪNG!</b><br><br>" +
+        "<b>" + data.name + "</b><br>" +
+        "<span style='font-size:22px;color:#d32f2f'>" +
+        data.value + "</span>";
+    }
+  } catch (e) {
+    document.getElementById("result").innerHTML =
+      "❌ Lỗi kết nối server";
+    document.getElementById("btn").disabled = false;
+  }
+}
+</script>
+
+</body>
+</html>
